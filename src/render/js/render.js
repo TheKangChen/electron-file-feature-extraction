@@ -119,17 +119,11 @@ async function startAnalyzer() {
     // extract through signal
     const sigLen = paddedSig.length;
 
-    let i = 0;
-    let interval = setInterval(() => {
-        if (i < sigLen) {
-            const currentSig = paddedSig.subarray(i, i+bufferSize)
-            let extractedFeatures = Meyda.extract(featuresList, currentSig);
-            console.log(extractedFeatures);
-            i+= bufferSize;
-        } else {
-            clearInterval(interval);
-        }
-    }, 23.2);
+    for (let i=0; i<sigLen; i+=bufferSize) {
+        const currentSig = paddedSig.subarray(i, i+bufferSize)
+        let extractedFeatures = Meyda.extract(featuresList, currentSig);
+        console.log(extractedFeatures);
+    }
 }
 
 
