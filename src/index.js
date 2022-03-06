@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('path');
 require('@electron/remote/main').initialize();
 
@@ -22,7 +22,7 @@ const createWindow = () => {
   require('@electron/remote/main').enable(mainWindow.webContents);
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, '/render/html/index.html'));
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
@@ -52,3 +52,25 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+/**************************************************************************/
+
+
+// // select file from folder
+// ipcMain.on('select-file', async e => {
+//   console.log('selecting file');
+
+//   try {
+//     const selectedFile = await dialog.showOpenDialog({
+//       properties: ['openFile', 'openDirectory']
+//     })
+
+//     const file = selectedFile.filePaths;
+//     const canceled = selectedFile.canceled;
+
+//     console.log(canceled);
+//     console.log(file);
+
+//   } catch (err) {
+//     console.log(err);
+//   }
+// })
