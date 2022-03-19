@@ -1,8 +1,11 @@
 const { Menu, dialog } = require('@electron/remote');
 const { ipcRenderer } = require('electron');
+
 const fs = require('fs');
 const wav = require('node-wav');
 const Meyda = require('meyda');
+const { writeFileSync } = require('original-fs');
+const path = require('path');
 
 
 const debug = true;
@@ -23,7 +26,6 @@ let featuresList = [
     'perceptualSharpness',
     'spectralSlope'
 ];
-
 const finalFeatureSet = [
     'rms_mean',
     'rms_std',
@@ -104,19 +106,21 @@ const finalFeatureSet = [
 let fileBuffer; // audio file buffer
 let audioData; // audio file data
 let signal; // audio signal from audio data
-
 let featureContainer = []; // Container for all feature
-// let featureStats; // mean & std of features
+let file;
 
 // audio metadata
 const sampleRate = 44100;
-const bufferSize = 1024;
+const bufferSize = 1024; // 23ms
 const hopSize = bufferSize / 2;
 const windowingFunction = 'hanning';
 const n_mfcc = 13;
 
 
+
+/**********************************************/
 // Select HTML elements
+/**********************************************/
 const audioElement = document.getElementById('audio');
 
 const startBtn = document.getElementById('startBtn');
@@ -129,9 +133,12 @@ const saveBtn = document.getElementById("saveBtn");
 saveBtn.onclick = saveAsCSV;
 
 
-/*********************************************************************/
 
+/**********************************************/
+// Fuctions
+/**********************************************/
 
+/****************** File io *******************/
 // get audio file
 async function getAudiofile() {
     try {
@@ -145,7 +152,7 @@ async function getAudiofile() {
         ]
         });
 
-        const file = selectedFile.filePaths;
+        file = selectedFile.filePaths;
         const canceled = selectedFile.canceled;
 
         if (debug) {
@@ -163,6 +170,57 @@ async function getAudiofile() {
 }
 
 
+// save feature of audio file to csv
+async function saveAsCSV() {
+    const featureStats = getStats(featureContainer);
+    debug ? console.log(featureStats.length) : '';
+
+    if (featureStats) {
+        const data = featureStats.toString();
+        // save file
+        const filename = file[0].split('/').slice(-1).toString();
+        debug ? console.log(filename, typeof filename) : '';
+
+        try {
+            const selectedFolder = await dialog.showSaveDialog({
+                title: 'Save File',
+                defaultPath: path.join(__dirname, '../../export/', filename),
+                buttonLabel: 'Save',
+                filters: [
+                    {
+                        name: 'CSV Files',
+                        extensions: ['csv']
+                    }
+                ],
+                properties: [
+                    'createDirectory',
+                    'showOverwriteConfirmation'
+                ]
+            });
+
+            const filePath = selectedFolder.filePath;
+            const canceled = selectedFolder.canceled;
+
+            if (debug) {
+                console.log(filePath);
+                console.log(canceled);
+            }
+
+            if (!canceled) {
+                // write to csv file
+                fs.writeFile(filePath.toString(), data, err => {
+                    if (err) throw err;
+                    console.log(err);
+                })
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+}
+
+
+/****************** Features ******************/
 // get features
 async function getFeatures() {
     // config Meyda
@@ -312,26 +370,18 @@ function getStats(featureContainer) {
 }
 
 
-// save feature stats for the file
-function saveAsCSV() {
-    const featureStats = getStats(featureContainer);
-    debug ? console.log(featureStats.length) : '';
 
-    if (featureStats) {
-        ;
-    }
-}
+/**********************************************/
+// Math Calculations
+/**********************************************/
 
-
-/************* Math Calculations *************/
-
-// Check if number is the power of 2
+// check if number is the power of 2
 function isPowerOf2(v) {
     return v && !(v & (v - 1));
 }
 
 
-// Mean of an array
+// mean of an array
 function mean(a) {
     if (!Array.isArray(a)) throw 'mean() parameter 0 not an array';
     let n = a.length;
@@ -340,11 +390,11 @@ function mean(a) {
 }
 
 
-// Standard Deviation of an array
+// standard deviation of an array
 function std(a) {
     if (!Array.isArray(a)) throw 'std() parameter 0 not an array';
     const n = a.length;
     if (n === 0) return 0;
-    const m = a.reduce((prev, curr) => prev + curr) / n;
+    const m = a.reduce((prev, curr) => prev + curr) / n; // calculate mean
     return Math.sqrt(a.map(x => Math.pow(x - m, 2)).reduce((prev, curr) => prev + curr) / n);
 }
