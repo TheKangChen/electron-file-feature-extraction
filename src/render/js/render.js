@@ -184,7 +184,7 @@ async function saveAsCSV() {
         try {
             const selectedFolder = await dialog.showSaveDialog({
                 title: 'Save File',
-                defaultPath: path.join(__dirname, '../../export/', filename),
+                defaultPath: path.join(__dirname, '../../../export/', filename),
                 buttonLabel: 'Save',
                 filters: [
                     {
