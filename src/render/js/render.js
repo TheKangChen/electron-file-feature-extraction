@@ -1,10 +1,9 @@
-const { Menu, dialog } = require('@electron/remote');
+const { Menu, dialog, app } = require('@electron/remote');
 const { ipcRenderer } = require('electron');
 
 const fs = require('fs');
 const wav = require('node-wav');
 const Meyda = require('meyda');
-const { writeFileSync } = require('original-fs');
 const path = require('path');
 
 
@@ -143,13 +142,16 @@ saveBtn.onclick = saveAsCSV;
 async function getAudiofile() {
     try {
         const selectedFile = await dialog.showOpenDialog({
-        properties: ['openFile', 'openDirectory'],
-        filters: [
-            {
-                name: 'Audios',
-                extensions: ['wav']
-            }
-        ]
+            title: 'Open File',
+            defaultPath: app.getPath('home') || path.parse(process.cwd()).root,
+            buttonLabel: 'Open',
+            properties: ['openFile', 'openDirectory'],
+            filters: [
+                {
+                    name: 'Audios',
+                    extensions: ['wav']
+                }
+            ]
         });
 
         file = selectedFile.filePaths;
@@ -184,7 +186,7 @@ async function saveAsCSV() {
         try {
             const selectedFolder = await dialog.showSaveDialog({
                 title: 'Save File',
-                defaultPath: path.join(__dirname, '../../../export/', filename),
+                defaultPath: path.join(app.getPath('desktop'), filename) || path.join(__dirname, '../../../export/', filename),
                 buttonLabel: 'Save',
                 filters: [
                     {
